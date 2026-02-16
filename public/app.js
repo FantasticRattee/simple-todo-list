@@ -26,12 +26,12 @@ async function fetchTodos() {
 // Add a new todo
 async function addTodo() {
     const text = todoInput.value.trim();
-    
+
     if (!text) {
         alert('Please enter a todo');
         return;
     }
-    
+
     try {
         const response = await fetch(API_BASE, {
             method: 'POST',
@@ -40,7 +40,7 @@ async function addTodo() {
             },
             body: JSON.stringify({ text }),
         });
-        
+
         if (response.ok) {
             const newTodo = await response.json();
             todos.push(newTodo);
@@ -61,7 +61,7 @@ async function toggleTodo(id) {
         const response = await fetch(`${API_BASE}/${id}`, {
             method: 'PUT',
         });
-        
+
         if (response.ok) {
             const updatedTodo = await response.json();
             const index = todos.findIndex(t => t.id === id);
@@ -84,7 +84,7 @@ async function deleteTodo(id) {
         const response = await fetch(`${API_BASE}/${id}`, {
             method: 'DELETE',
         });
-        
+
         if (response.ok) {
             todos = todos.filter(t => t.id !== id);
             renderTodos();
@@ -97,13 +97,98 @@ async function deleteTodo(id) {
     }
 }
 
+// Enable edit mode
+function enableEditMode(id) {
+    const todoItem = document.querySelector(`.todo-item[data-id="${id}"]`);
+    if (!todoItem) return;
+
+    const textSpan = todoItem.querySelector('.todo-text');
+    const editBtn = todoItem.querySelector('.edit-btn');
+    const deleteBtn = todoItem.querySelector('.delete-btn');
+    const checkbox = todoItem.querySelector('.todo-checkbox');
+
+    const currentText = textSpan.innerText;
+
+    // Create input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentText;
+    input.className = 'edit-input';
+
+    // Create save button
+    const saveBtn = document.createElement('button');
+    saveBtn.innerText = 'Save';
+    saveBtn.className = 'save-btn';
+    saveBtn.onclick = () => saveEdit(id);
+
+    // Replace elements
+    textSpan.replaceWith(input);
+    editBtn.replaceWith(saveBtn);
+
+    // Hide other controls
+    deleteBtn.style.display = 'none';
+    checkbox.disabled = true;
+
+    // Focus input
+    input.focus();
+
+    // Allow saving on Enter
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveEdit(id);
+        }
+    });
+}
+
+// Save edited todo
+async function saveEdit(id) {
+    const todoItem = document.querySelector(`.todo-item[data-id="${id}"]`);
+    if (!todoItem) return;
+
+    const input = todoItem.querySelector('.edit-input');
+    const newText = input.value.trim();
+
+    if (!newText) {
+        alert('Todo text cannot be empty');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: newText }),
+        });
+
+        if (response.ok) {
+            const updatedTodo = await response.json();
+
+            // Update local state
+            const index = todos.findIndex(t => t.id === id);
+            if (index !== -1) {
+                todos[index] = updatedTodo;
+                renderTodos();
+            }
+        } else {
+            alert('Failed to update todo');
+            renderTodos(); // Reset UI
+        }
+    } catch (error) {
+        console.error('Error updating todo:', error);
+        alert('Failed to update todo');
+        renderTodos(); // Reset UI
+    }
+}
+
 // Render todos to the DOM
 function renderTodos() {
     if (todos.length === 0) {
         todoList.innerHTML = '<div class="empty-state">No todos yet. Add one above!</div>';
     } else {
         todoList.innerHTML = todos.map(todo => `
-            <div class="todo-item ${todo.completed ? 'completed' : ''}">
+            <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
                 <input 
                     type="checkbox" 
                     class="todo-checkbox" 
@@ -111,11 +196,12 @@ function renderTodos() {
                     onchange="toggleTodo(${todo.id})"
                 />
                 <span class="todo-text">${escapeHtml(todo.text)}</span>
+                <button class="edit-btn" onclick="enableEditMode(${todo.id})">Edit</button>
                 <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
             </div>
         `).join('');
     }
-    
+
     updateStats();
 }
 

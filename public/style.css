@@ -141,3 +141,45 @@ h1 {
     color: #6c757d;
     font-size: 18px;
 }
+
+.edit-btn {
+    background: #ffc107;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+    margin-right: 5px;
+}
+
+.edit-btn:hover {
+    background: #e0a800;
+}
+
+.save-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+    margin-right: 5px;
+}
+
+.save-btn:hover {
+    background: #218838;
+}
+
+.edit-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: inherit;
+    margin-right: 5px;
+}

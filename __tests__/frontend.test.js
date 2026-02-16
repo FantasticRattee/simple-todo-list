@@ -50,7 +50,7 @@ describe('Frontend Todo Application', () => {
   describe('renderTodos function', () => {
     test('should show empty state when no todos', () => {
       const todos = [];
-      
+
       if (todos.length === 0) {
         todoList.innerHTML = '<div class="empty-state">No todos yet. Add one above!</div>';
       }
@@ -108,7 +108,7 @@ describe('Frontend Todo Application', () => {
 
     test('should show zero stats for empty list', () => {
       const todos = [];
-      
+
       const total = todos.length;
       const completed = todos.filter(t => t.completed).length;
       totalCount.textContent = `Total: ${total}`;
@@ -151,14 +151,14 @@ describe('Frontend Todo Application', () => {
   describe('addTodo function', () => {
     test('should add a new todo', async () => {
       const newTodo = { id: 1, text: 'New todo', completed: false };
-      
+
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => newTodo
       });
 
       todoInput.value = 'New todo';
-      
+
       const response = await fetch('/api/todos', {
         method: 'POST',
         headers: {
@@ -175,7 +175,7 @@ describe('Frontend Todo Application', () => {
     test('should not add empty todo', () => {
       todoInput.value = '';
       const text = todoInput.value.trim();
-      
+
       if (!text) {
         alert('Please enter a todo');
       }
@@ -186,7 +186,7 @@ describe('Frontend Todo Application', () => {
     test('should not add whitespace-only todo', () => {
       todoInput.value = '   ';
       const text = todoInput.value.trim();
-      
+
       if (!text) {
         alert('Please enter a todo');
       }
@@ -200,7 +200,7 @@ describe('Frontend Todo Application', () => {
       });
 
       todoInput.value = 'New todo';
-      
+
       const response = await fetch('/api/todos', {
         method: 'POST',
         headers: {
@@ -220,7 +220,7 @@ describe('Frontend Todo Application', () => {
   describe('toggleTodo function', () => {
     test('should toggle todo completion', async () => {
       const updatedTodo = { id: 1, text: 'Test todo', completed: true };
-      
+
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => updatedTodo
@@ -286,11 +286,54 @@ describe('Frontend Todo Application', () => {
     });
   });
 
+  describe('saveEdit function', () => {
+    test('should save edited todo', async () => {
+      const updatedTodo = { id: 1, text: 'Updated text', completed: false };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => updatedTodo
+      });
+
+      // Mock DOM element for todo item and input
+      const todoItem = document.createElement('div');
+      todoItem.className = 'todo-item';
+      todoItem.setAttribute('data-id', '1');
+      document.body.appendChild(todoItem);
+
+      const input = document.createElement('input');
+      input.className = 'edit-input';
+      input.value = 'Updated text';
+      todoItem.appendChild(input);
+
+      // Recreate the function logic since we can't import it
+      const saveEdit = async (id) => {
+        const item = document.querySelector(`.todo-item[data-id="${id}"]`);
+        const inputVal = item.querySelector('.edit-input').value.trim();
+
+        const response = await fetch(`/api/todos/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: inputVal })
+        });
+        return response;
+      };
+
+      await saveEdit(1);
+
+      expect(fetch).toHaveBeenCalledWith('/api/todos/1', expect.objectContaining({
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Updated text' })
+      }));
+    });
+  });
+
   describe('Input validation', () => {
     test('should trim whitespace from input', () => {
       todoInput.value = '  Test todo  ';
       const text = todoInput.value.trim();
-      
+
       expect(text).toBe('Test todo');
     });
 
@@ -301,7 +344,7 @@ describe('Frontend Todo Application', () => {
         div.textContent = text;
         return div.innerHTML;
       };
-      
+
       const escaped = escapeHtml(specialText);
       expect(escaped).not.toContain('<script>');
     });
