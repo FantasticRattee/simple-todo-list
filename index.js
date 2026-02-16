@@ -51,11 +51,11 @@ app.get('/api/todos', (req, res) => {
 // Add a new todo
 app.post('/api/todos', (req, res) => {
   const { text } = req.body;
-  
+
   if (!text || text.trim() === '') {
     return res.status(400).json({ error: 'Todo text is required' });
   }
-  
+
   const todos = readTodos();
   const newTodo = {
     id: Date.now(),
@@ -63,9 +63,9 @@ app.post('/api/todos', (req, res) => {
     completed: false,
     createdAt: new Date().toISOString()
   };
-  
+
   todos.push(newTodo);
-  
+
   if (writeTodos(todos)) {
     res.status(201).json(newTodo);
   } else {
@@ -78,12 +78,18 @@ app.put('/api/todos/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const todos = readTodos();
   const todoIndex = todos.findIndex(t => t.id === id);
-  
+
   if (todoIndex === -1) {
     return res.status(404).json({ error: 'Todo not found' });
   }
-  
-  todos[todoIndex].completed = true;
+
+  todos[todoIndex].completed = !todos[todoIndex].completed;
+
+  if (writeTodos(todos)) {
+    res.json(todos[todoIndex]);
+  } else {
+    res.status(500).json({ error: 'Failed to update todo' });
+  }
 });
 
 // Delete a todo
@@ -91,11 +97,11 @@ app.delete('/api/todos/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const todos = readTodos();
   const filteredTodos = todos.filter(t => t.id !== id);
-  
+
   if (todos.length === filteredTodos.length) {
     return res.status(404).json({ error: 'Todo not found' });
   }
-  
+
   if (writeTodos(filteredTodos)) {
     res.json({ message: 'Todo deleted successfully' });
   } else {
